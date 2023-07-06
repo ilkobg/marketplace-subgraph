@@ -443,9 +443,9 @@ export class NFTContract extends Entity {
 }
 
 export class List extends Entity {
-  constructor(id: Bytes) {
+  constructor(id: string) {
     super();
-    this.set("id", Value.fromBytes(id));
+    this.set("id", Value.fromString(id));
   }
 
   save(): void {
@@ -453,34 +453,32 @@ export class List extends Entity {
     assert(id != null, "Cannot save List entity without an ID");
     if (id) {
       assert(
-        id.kind == ValueKind.BYTES,
-        `Entities of type List must have an ID of type Bytes but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        id.kind == ValueKind.STRING,
+        `Entities of type List must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
       );
-      store.set("List", id.toBytes().toHexString(), this);
+      store.set("List", id.toString(), this);
     }
   }
 
-  static loadInBlock(id: Bytes): List | null {
-    return changetype<List | null>(
-      store.get_in_block("List", id.toHexString())
-    );
+  static loadInBlock(id: string): List | null {
+    return changetype<List | null>(store.get_in_block("List", id));
   }
 
-  static load(id: Bytes): List | null {
-    return changetype<List | null>(store.get("List", id.toHexString()));
+  static load(id: string): List | null {
+    return changetype<List | null>(store.get("List", id));
   }
 
-  get id(): Bytes {
+  get id(): string {
     let value = this.get("id");
     if (!value || value.kind == ValueKind.NULL) {
       throw new Error("Cannot return null for a required field.");
     } else {
-      return value.toBytes();
+      return value.toString();
     }
   }
 
-  set id(value: Bytes) {
-    this.set("id", Value.fromBytes(value));
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
   }
 
   get owner(): Bytes {
@@ -533,6 +531,19 @@ export class List extends Entity {
 
   set price(value: BigInt) {
     this.set("price", Value.fromBigInt(value));
+  }
+
+  get isActive(): boolean {
+    let value = this.get("isActive");
+    if (!value || value.kind == ValueKind.NULL) {
+      return false;
+    } else {
+      return value.toBoolean();
+    }
+  }
+
+  set isActive(value: boolean) {
+    this.set("isActive", Value.fromBoolean(value));
   }
 
   get blockNumber(): BigInt {

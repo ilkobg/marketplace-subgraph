@@ -100,90 +100,34 @@ export class List__Params {
   }
 }
 
-export class Marketplace__listingsResult {
-  value0: Address;
-  value1: Address;
-  value2: BigInt;
-  value3: BigInt;
-
-  constructor(
-    value0: Address,
-    value1: Address,
-    value2: BigInt,
-    value3: BigInt
-  ) {
-    this.value0 = value0;
-    this.value1 = value1;
-    this.value2 = value2;
-    this.value3 = value3;
-  }
-
-  toMap(): TypedMap<string, ethereum.Value> {
-    let map = new TypedMap<string, ethereum.Value>();
-    map.set("value0", ethereum.Value.fromAddress(this.value0));
-    map.set("value1", ethereum.Value.fromAddress(this.value1));
-    map.set("value2", ethereum.Value.fromUnsignedBigInt(this.value2));
-    map.set("value3", ethereum.Value.fromUnsignedBigInt(this.value3));
-    return map;
-  }
-
-  getOwner(): Address {
-    return this.value0;
-  }
-
-  getNftContractAddress(): Address {
-    return this.value1;
-  }
-
-  getTokenId(): BigInt {
-    return this.value2;
-  }
-
-  getPrice(): BigInt {
-    return this.value3;
-  }
-}
-
 export class Marketplace extends ethereum.SmartContract {
   static bind(address: Address): Marketplace {
     return new Marketplace("Marketplace", address);
   }
 
-  listings(param0: BigInt): Marketplace__listingsResult {
-    let result = super.call(
-      "listings",
-      "listings(uint256):(address,address,uint256,uint256)",
-      [ethereum.Value.fromUnsignedBigInt(param0)]
-    );
+  listings(param0: Address, param1: BigInt): BigInt {
+    let result = super.call("listings", "listings(address,uint256):(uint256)", [
+      ethereum.Value.fromAddress(param0),
+      ethereum.Value.fromUnsignedBigInt(param1)
+    ]);
 
-    return new Marketplace__listingsResult(
-      result[0].toAddress(),
-      result[1].toAddress(),
-      result[2].toBigInt(),
-      result[3].toBigInt()
-    );
+    return result[0].toBigInt();
   }
 
-  try_listings(
-    param0: BigInt
-  ): ethereum.CallResult<Marketplace__listingsResult> {
+  try_listings(param0: Address, param1: BigInt): ethereum.CallResult<BigInt> {
     let result = super.tryCall(
       "listings",
-      "listings(uint256):(address,address,uint256,uint256)",
-      [ethereum.Value.fromUnsignedBigInt(param0)]
+      "listings(address,uint256):(uint256)",
+      [
+        ethereum.Value.fromAddress(param0),
+        ethereum.Value.fromUnsignedBigInt(param1)
+      ]
     );
     if (result.reverted) {
       return new ethereum.CallResult();
     }
     let value = result.value;
-    return ethereum.CallResult.fromValue(
-      new Marketplace__listingsResult(
-        value[0].toAddress(),
-        value[1].toAddress(),
-        value[2].toBigInt(),
-        value[3].toBigInt()
-      )
-    );
+    return ethereum.CallResult.fromValue(value[0].toBigInt());
   }
 }
 
@@ -206,6 +150,10 @@ export class BuyNFTCall__Inputs {
 
   get tokenId(): BigInt {
     return this._call.inputValues[0].value.toBigInt();
+  }
+
+  get nftContractAddress(): Address {
+    return this._call.inputValues[1].value.toAddress();
   }
 }
 
@@ -236,6 +184,10 @@ export class CancelListingCall__Inputs {
 
   get tokenId(): BigInt {
     return this._call.inputValues[0].value.toBigInt();
+  }
+
+  get nftContractAddress(): Address {
+    return this._call.inputValues[1].value.toAddress();
   }
 }
 

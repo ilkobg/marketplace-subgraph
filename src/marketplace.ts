@@ -64,7 +64,55 @@ export function handleBuy(event: BuyEvent): void {
 
   store.remove("NFT", buyEntity.tokenId.toString());
 
+  let listEntityId = event.params.nftContractAddress
+    .toHex()
+    .concat('-')
+    .concat(event.params.tokenId.toString());
+
+  let listEntity = List.load(listEntityId);
+  if (listEntity != null) {
+    listEntity.isActive = false;
+    listEntity.save();
+  }
+
   buyEntity.save();
+}
+
+export function handleList(event: ListEvent): void {
+  let listEntity = new List(
+    event.params.nftContractAddress
+    .toHex()
+    .concat('-')
+    .concat(event.params.tokenId.toString())
+  );
+  listEntity.owner = event.params.owner;
+  listEntity.tokenId = event.params.tokenId;
+  listEntity.nftContractAddress = event.params.nftContractAddress;
+  listEntity.price = event.params.price;
+  listEntity.isActive = true;
+
+  listEntity.blockNumber = event.block.number;
+  listEntity.blockTimestamp = event.block.timestamp;
+  listEntity.transactionHash = event.transaction.hash;
+
+  let nftContract = NFTContract.load(listEntity.nftContractAddress);
+  if (nftContract == null) {
+    // No NFTs for this contract yet
+    nftContract = new NFTContract(listEntity.nftContractAddress);
+    nftContract.nftIds = [];
+  }
+
+  let nft = new NFT(listEntity.tokenId.toString());
+  nft.price = listEntity.price;
+  nft.save();
+
+  let current_ids = nftContract.nftIds;
+  current_ids.push(listEntity.tokenId.toString());
+  let new_ids = current_ids;
+  nftContract.nftIds = new_ids;
+  nftContract.save();
+
+  listEntity.save();
 }
 
 export function handleCancel(event: CancelEvent): void {
@@ -93,38 +141,16 @@ export function handleCancel(event: CancelEvent): void {
 
   store.remove("NFT", cancelEntity.tokenId.toString());
 
-  cancelEntity.save();
-}
+  let listEntityId = event.params.nftContractAddress
+    .toHex()
+    .concat('-')
+    .concat(event.params.tokenId.toString());
 
-export function handleList(event: ListEvent): void {
-  let listEntity = new List(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  );
-  listEntity.owner = event.params.owner;
-  listEntity.tokenId = event.params.tokenId;
-  listEntity.nftContractAddress = event.params.nftContractAddress;
-  listEntity.price = event.params.price;
-
-  listEntity.blockNumber = event.block.number;
-  listEntity.blockTimestamp = event.block.timestamp;
-  listEntity.transactionHash = event.transaction.hash;
-
-  let nftContract = NFTContract.load(listEntity.nftContractAddress);
-  if (nftContract == null) {
-    // No NFTs for this contract yet
-    nftContract = new NFTContract(listEntity.nftContractAddress);
-    nftContract.nftIds = [];
+  let listEntity = List.load(listEntityId);
+  if (listEntity != null) {
+    listEntity.isActive = false;
+    listEntity.save();
   }
 
-  let nft = new NFT(listEntity.tokenId.toString());
-  nft.price = listEntity.price;
-  nft.save();
-
-  let current_ids = nftContract.nftIds;
-  current_ids.push(listEntity.tokenId.toString());
-  let new_ids = current_ids;
-  nftContract.nftIds = new_ids;
-  nftContract.save();
-
-  listEntity.save();
+  cancelEntity.save();
 }
